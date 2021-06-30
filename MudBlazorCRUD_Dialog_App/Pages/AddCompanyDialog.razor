@@ -1,0 +1,166 @@
+﻿@page "/Company"
+
+@using MudBlazorCRUD_Dialog_App.Data.Models
+@inject MudBlazorCRUD_Dialog_App.Services.ICompanyService companyService
+@inject MudBlazor.ISnackbar snackBar
+@inject IDialogService DialogService
+
+
+<MudButton OnClick="OpenCompanyDialog" Variant="Variant.Filled" Color="Color.Secondary">
+    Add Company
+</MudButton>
+
+@*dialog company*@
+<MudDialog @bind-IsVisible="vcomp">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Create" Class="mr-3" /> Add Company
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" @bind-IsValid="@success">
+            <MudTextField @bind-Value="company.Name" Label="Name" Required="true" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => company.Name)" @oninput="@((ChangeEventArgs e) =>
+      company.Name = e.Value.ToString())"></MudTextField>
+            <MudTextField @bind-Value="company.Phone" Label="Phone" Required="true" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => company.Phone)" @oninput="@((ChangeEventArgs e) =>
+      company.Phone = e.Value.ToString())"></MudTextField>
+            <MudTextField @bind-Value="company.Address" Label="Address" Required="true" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => company.Address)" @oninput="@((ChangeEventArgs e) =>
+      company.Address = e.Value.ToString())"></MudTextField>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Success" Disabled="@(!success)" OnClick="SaveCompany">Save Company</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="Submit" Class="px-10">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@*table for company*@
+<MudTable Elevation="25" Items="GetCompanies()" Filter="new Func<Company, bool>(SearchCompany)" MultiSelection="true" @bind-SelectedItems="selectedItems" FixedHeader="@fixed_header" Height="@(fixed_header?"400px":"")">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Companies</MudText>
+        <MudToolBarSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search for Companies..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Company, object>(x=>x.Id)">Id</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Company, object>(x=>x.Name)"> Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Company, object>(x=>x.Phone)"> Phone</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Company, object>(x=>x.Address)">Address</MudTableSortLabel></MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.Id</MudTd>
+        <MudTd DataLabel=" Name">@context.Name</MudTd>
+        <MudTd DataLabel=" Phone">@context.Phone</MudTd>
+        <MudTd DataLabel=" Address">@context.Address</MudTd>
+
+        <MudTd DataLabel="">
+            <MudFab @onclick="@(()=>Edit(@context.Id))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=>Delete(@context.Id))" Color="Color.Secondary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] {3,5,10,25,50,100 }" />
+    </PagerContent>
+    <FooterContent>
+        <MudTd colspan="4">Select All</MudTd>
+        <MudTd DataLabel="">
+            <MudFab @onclick="@(()=>DeleteAll())" Color="Color.Secondary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </FooterContent>
+</MudTable>
+<MudText Inline="true">Selected items: @(selectedItems == null ? "" : string.Join(", ", selectedItems.OrderBy(x=>x.Id).Select(x=>x.Id)))</MudText>
+
+
+@code {
+    bool fixed_header = true;
+    private string searchString = "";
+
+    Company company = new Company();
+    private List<Company> companies = new List<Company>();
+    private bool vcomp;
+
+    private HashSet<Company> selectedItems = new HashSet<Company>();
+
+    //validation
+    MudForm form;
+    private bool success;
+
+    protected override void OnInitialized()
+    {
+        GetCompanies();
+        vcomp = false;
+    }
+
+    private List<Company> GetCompanies()
+    {
+        companies = companyService.GetCompanies().ToList();
+        return companies;
+    }
+
+    private void OpenCompanyDialog()
+    {
+        company = new Company();
+        vcomp = true;
+        success = false;
+    }
+
+    void Submit()
+    {
+        vcomp = false;
+        success = false;
+    }
+
+    private bool SearchCompany(Company company)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (company.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+            || company.Phone.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+             || company.Address.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+            )
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private void SaveCompany()
+    {
+        if (company.Id == 0)
+        {
+            companyService.SaveCompany(company);
+            snackBar.Add("Company Saved.", Severity.Success);
+        }
+        else
+        {
+            companyService.UpdateCompany(company);
+            snackBar.Add("CompanyUpdeted.", Severity.Normal);
+        }
+
+        vcomp = false;
+        success = false;
+    }
+
+    private void Edit(int id)
+    {
+        vcomp = true;
+        company = companies.FirstOrDefault(c => c.Id == id);
+    }
+
+    private void Delete(int id)
+    {
+        companyService.DeleteCompany(id);
+        snackBar.Add("Company Deleted.", Severity.Error);
+    }
+
+    private void DeleteAll()
+    {
+        if (selectedItems.Count > 1)
+        {
+            companies = selectedItems.ToList();
+            companyService.DeleteAllCompanies(companies);
+            snackBar.Add("All Companies Deleted.", Severity.Error);
+        }
+        selectedItems = null;
+    }
+}
+

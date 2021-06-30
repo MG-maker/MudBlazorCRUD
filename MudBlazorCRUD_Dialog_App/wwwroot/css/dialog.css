@@ -1,0 +1,8 @@
+﻿.mud-dialog-title {
+    background-color: antiquewhite;
+}
+
+.mud-dialog-content {
+    overflow: auto;
+    height: 480px;
+}

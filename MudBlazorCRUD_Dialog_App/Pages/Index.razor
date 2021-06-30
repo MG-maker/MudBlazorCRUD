@@ -1,0 +1,229 @@
+﻿@page "/"
+
+@using MudBlazorCRUD_Dialog_App.Data.Models
+@inject MudBlazorCRUD_Dialog_App.Services.BaseRepo.ICustomerRepository customerService
+@inject MudBlazorCRUD_Dialog_App.Services.BaseRepo.ICompanyRepository companyService
+
+@inject MudBlazor.ISnackbar snackBar
+
+
+<MudButton OnClick="OpenInliningDialog" Variant="Variant.Filled" Color="Color.Success">
+    Add Customer
+</MudButton>
+
+<MudDialog @bind-IsVisible="visible">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @if (select == true)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /><label>Edit Customer</label>
+            }
+            else
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Create" Class="mr-3" /><label>Add Customer</label>
+            }
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" @bind-IsValid="@success">
+            <MudTextField @bind-Value="customer.FirstName" Label="First Name" Required="true" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.FirstName)"></MudTextField>
+            <MudTextField @bind-Value="customer.LastName" Label="Last Name" Required="true" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.LastName)"></MudTextField>
+            <MudNumericField @bind-Value="customer.Information.Age" Label="Age" Required="true" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.Information.Age)" AdornmentColor="Color.Info" HideSpinButtons="true" Adornment="Adornment.End" AdornmentText="years"></MudNumericField>
+            <MudTextField @bind-Value="customer.Information.PhoneNumber" Label="Phone Number" Required="true" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.Information.PhoneNumber)"></MudTextField>
+            <MudTextField @bind-Value="customer.Information.Email" Label="Email" Required="true" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.Information.Email)"></MudTextField>
+            <MudTextField @bind-Value="customer.Information.Social.Name" Label="Social Name" Required="true" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.Information.Social.Name)"></MudTextField>
+            <MudNumericField @bind-Value="customer.Work.Experience" Label="Experience" Required="true" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.Work.Experience)" AdornmentColor="Color.Info" HideSpinButtons="true" Adornment="Adornment.End" AdornmentText="years"></MudNumericField>
+            <MudNumericField @bind-Value="customer.Work.Salary" Label="Salary" Required="true" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.Work.Salary)" AdornmentColor="Color.Success" HideSpinButtons="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney"></MudNumericField>
+
+            <MudSelect T="int?" Required="true" RequiredError="Company is not selected!" Label="Company" Strict="true" @bind-Value="@customer.CompanyId">
+                <MudSelectItem T="int?">Select Company....</MudSelectItem>
+                @foreach (Company comp in companies)
+                {
+                    <MudSelectItem T="int?" Value="@comp.Id">@comp.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Success" Disabled="@(!success)" OnClick="SaveCustomer">Save Customer</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="Submit" Class="px-10">Close</MudButton>
+    </DialogActions>
+
+</MudDialog>
+
+
+<MudTable Elevation="25" Items="GetCustomers()" Filter="new Func<Customer, bool>(Search)" MultiSelection="true" @bind-SelectedItems="selectedItems" FixedHeader="@fixed_header" Height="@(fixed_header?"400px":"")">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Customers</MudText>
+        <MudToolBarSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search for Customers..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Customer, object>(x=>x.Id)">Id</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Customer, object>(x=>x.FirstName)">FirstName</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Customer, object>(x=>x.LastName)">LastName</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Customer, object>(x=>x.Information.Age)">Age</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Customer, object>(x=>x.Information.PhoneNumber)">PhoneNumber</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Customer, object>(x=>x.Information.Email)">Email</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Customer, object>(x=>x.Information.Social.Name)">Social Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Customer, object>(x=>x.Work.Experience)">Experience</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Customer, object>(x=>x.Work.Salary)">Salary</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Customer, object>(x=>x.CompanyId)">CompanyID</MudTableSortLabel></MudTh>
+        @*<MudTh><MudTableSortLabel SortBy="new Func<Customer, object>(x=>x.Company.Id)">Company Id</MudTableSortLabel></MudTh>*@
+        <MudTh><MudTableSortLabel SortBy="new Func<Customer, object>(x=>x.Company.Name)">Company Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Customer, object>(x=>x.Company.Address)">Company Address</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Customer, object>(x=>x.Company.Phone)">Company Phone</MudTableSortLabel></MudTh>
+
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.Id</MudTd>
+        <MudTd DataLabel="FirstName">@context.FirstName</MudTd>
+        <MudTd DataLabel="LastName">@context.LastName</MudTd>
+        <MudTd DataLabel="Age">@context.Information.Age</MudTd>
+        <MudTd DataLabel="PhoneNumber">@context.Information.PhoneNumber</MudTd>
+        <MudTd DataLabel="Email">@context.Information.Email</MudTd>
+        <MudTd DataLabel="Social Name">@context.Information.Social.Name</MudTd>
+        <MudTd DataLabel="Experience">@context.Work.Experience</MudTd>
+        <MudTd DataLabel="Salary">@context.Work.Salary</MudTd>
+        <MudTd DataLabel="CompanyID">@context.CompanyId</MudTd>
+        @*<MudTd DataLabel="Company Id">@context.Company.Id</MudTd>*@
+        <MudTd DataLabel="Company Name">@context.Company.Name</MudTd>
+        <MudTd DataLabel="Company Address">@context.Company.Address</MudTd>
+        <MudTd DataLabel="Company Phone">@context.Company.Phone</MudTd>
+
+        <MudTd DataLabel="">
+            <MudFab @onclick="@(()=>Edit(@context.Id))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=>Delete(@context.Id))" Color="Color.Secondary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 1, 2, 5, 10, 15, 30, 60, 80, 100 }" />
+    </PagerContent>
+    <FooterContent>
+        <MudTd colspan="13">Select All</MudTd>
+        <MudTd DataLabel="">
+            <MudFab @onclick="@(()=>DeleteAll())" Color="Color.Secondary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </FooterContent>
+</MudTable>
+<MudSwitch @bind-Checked="@fixed_header">Fixed Header</MudSwitch>
+<br />
+<MudText Inline="true">Selected items: @(selectedItems == null ? "" : string.Join(", ", selectedItems.OrderBy(x=>x.Id).Select(x=>x.Id)))</MudText>
+
+
+
+@code{
+    bool fixed_header = true;
+
+    private string searchString = "";
+    Customer customer = new Customer();
+    private List<Customer> customers = new List<Customer>();
+    private HashSet<Customer> selectedItems = new HashSet<Customer>();
+    // open-close dialog
+    private bool visible;
+
+    Company company = new Company();
+    private List<Company> companies = new List<Company>();
+
+    //validation
+    MudForm form;
+    private bool success;
+
+    // for select dialog title
+    bool select = false;
+
+    private void OpenInliningDialog()
+    {
+        visible = true;
+        success = false;
+        customer = new Customer();
+        // for use tables in one object 
+        customer.Information = new Information();
+        customer.Information.Social = new Social();
+        customer.Work = new Work();
+        // To get a list of companies in the dialogue and link to customer
+        GetCompanies();
+    }
+    // void Submit() => visible = false;
+    void Submit()
+    {
+        visible = false;
+        success = false;
+    }
+
+    protected override void OnInitialized()
+    {
+        //get a list of customers and associated tables
+        GetCustomers();
+        visible = false;
+        success = false;
+    }
+    private List<Customer> GetCustomers()
+    {
+        customers = customerService.GetCustomers().ToList();
+        return customers;
+    }
+    private List<Company> GetCompanies()
+    {
+        companies = companyService.GetCompanies().ToList();
+        return companies;
+    }
+
+    private bool Search(Customer customer)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (customer.FirstName.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+            || customer.LastName.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+             || customer.Information.Age.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase)
+             || customer.Information.Email.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+            || customer.Information.PhoneNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+            )
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private void SaveCustomer()
+    {
+        if (customer.Id == 0)
+        {
+            customerService.SaveCustomer(customer);
+            snackBar.Add("Customer Saved.", Severity.Success);
+        }
+        else
+        {
+            customerService.UpdateCustomer(customer);
+            snackBar.Add("Customer Update.", Severity.Normal);
+        }
+        visible = false;
+        success = false;
+    }
+
+    private void Edit(int id)
+    {
+        select = true;
+        customer = customers.FirstOrDefault(c => c.Id == id);
+        visible = true;
+        GetCompanies();
+    }
+
+    private void Delete(int id)
+    {
+        customerService.DeleteCustomer(id);
+        snackBar.Add("Customer Deleted.", Severity.Error);
+    }
+
+    private void DeleteAll()
+    {
+        if (selectedItems.Count > 1)
+        {
+            customers = selectedItems.ToList();
+            customerService.DeleteAllCustomers(customers);
+            snackBar.Add("All Companies Deleted.", Severity.Error);
+        }
+        selectedItems = null;
+    }
+}

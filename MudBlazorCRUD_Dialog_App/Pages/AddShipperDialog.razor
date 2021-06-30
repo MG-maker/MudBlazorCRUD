@@ -1,0 +1,270 @@
+﻿@page "/Shipper"
+
+@using MudBlazorCRUD_Dialog_App.Data.Models
+@inject MudBlazorCRUD_Dialog_App.Services.IShipperService shipperService
+@inject MudBlazorCRUD_Dialog_App.Services.ICompanyService companyService
+@inject MudBlazor.ISnackbar snackBar
+@inject IDialogService DialogService
+
+<div class="form-group">
+    <MudButton OnClick="OpenShipperDialog" Variant="Variant.Filled" Color="Color.Secondary">
+        Add Shipper
+    </MudButton>
+    </div>
+    @*--------------------------------------------Get Shipper by Id----------------------------------------------------------*@
+    <div class="form-group">
+        <input type="number" @bind="ID" />
+        <MudButton OnClick="getID" Variant="Variant.Filled" Color="Color.Secondary">
+            Get Shipper By Id
+        </MudButton>
+        <br />
+        @if (entity != null)
+        {
+            <p>@entity.Name</p>
+            <p>@entity.Phone</p>
+            <p>@entity.Address</p>
+            <p>@entity.Created</p>
+
+            <p>@entity.CompanyList</p>
+
+            @foreach (var Clist in entity.CompanyShipperList)
+            {
+                <p>@Clist</p>
+            }
+        }
+    </div>
+    @*------------------------------------------------------------------------------------------------------*@
+   
+ @*dialog shipper*@
+    <MudDialog @bind-isVisible="vcomp">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                @if (select == true)
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /><label>Edit Shipper</label>
+                 }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Create" Class="mr-3" /><label>Add Shipper</label> 
+                }
+
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <EditForm Model="@shipper" OnValidSubmit="OnValidSubmit">
+                @* use because we make several relationship between models *@
+                <ObjectGraphDataAnnotationsValidator />
+                @* <DataAnnotationsValidator />*@
+
+                <MudTextField @bind-Value="shipper.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => shipper.Name)" @oninput="@((ChangeEventArgs e) =>
+       shipper.Name = e.Value.ToString())"></MudTextField>
+                <MudTextField @bind-Value="shipper.Phone" Label="Phone" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => shipper.Phone)" @oninput="@((ChangeEventArgs e) =>
+       shipper.Phone = e.Value.ToString())"></MudTextField>
+                <MudTextField @bind-Value="shipper.Address" Label="Address" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => shipper.Address)" @oninput="@((ChangeEventArgs e) =>
+       shipper.Address = e.Value.ToString())"></MudTextField>
+                <MudSelect Label="Select Company...." MultiSelection="true" @bind-SelectedValues="options">
+                    @foreach (Company comp in companies)
+                    {
+                        <MudSelectItem T="int" Value="@comp.Id">@comp.Name</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Secondary">Save Shipper</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="Cancel" Class="px-10">Close</MudButton>
+            </EditForm>
+        </DialogContent>
+        <DialogActions>
+
+        </DialogActions>
+    </MudDialog>
+
+
+    @*table for company*@
+<MudTable Elevation="25" Items="GetShippers()" Filter="new Func<Shipper, bool>(SearchShipper)" MultiSelection="true" @bind-SelectedItems="selectedItems" FixedHeader="@fixed_header" Height="@(fixed_header?"400px":"")">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Companies</MudText>
+        <MudToolBarSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search for Shippers..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Shipper, object>(x=>x.Id)">Id</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Shipper, object>(x=>x.Name)"> Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Shipper, object>(x=>x.Phone)"> Phone</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Shipper, object>(x=>x.Address)">Address</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Shipper, object>(x=>x.CompanyList)">Companies</MudTableSortLabel></MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.Id</MudTd>
+        <MudTd DataLabel=" Name">@context.Name</MudTd>
+        <MudTd DataLabel=" Phone">@context.Phone</MudTd>
+        <MudTd DataLabel=" Address">@context.Address</MudTd>
+        <MudTd DataLabel=" Companies">@context.CompanyList</MudTd>
+
+        <MudTd DataLabel="">
+            <MudFab @onclick="@(()=>Edit(@context.Id))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=>Delete(@context.Id))" Color="Color.Secondary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] {3,5,10,25,50,100 }" />
+    </PagerContent>
+    <FooterContent>
+        <MudTd colspan="5">Select All</MudTd>
+        <MudTd DataLabel="">
+            <MudFab @onclick="@(()=>DeleteAll())" Color="Color.Secondary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </FooterContent>
+</MudTable>
+
+    <MudSwitch @bind-Checked="@fixed_header">Fixed Header</MudSwitch>
+    <br />
+    <MudText Inline="true">Selected items: @(selectedItems == null ? "" : string.Join(", ", selectedItems.OrderBy(x=>x.Id).Select(x=>x.Id)))</MudText>
+    <br />
+    <label>Validation: @validation</label>
+    <br />
+    <label>Visible dialog: @vcomp</label>
+    <br />
+    <label>Shipper Name: @shipper.Name</label>
+    <br />
+    <MudItem xs="12" md="6">
+        <MudText Typo="Typo.body2">MudSelect.SelectedValues: HashSet&lt;string&gt; { @(string.Join(", ", options.Select(x=>$"\"{x}\""))) }</MudText>
+    </MudItem>
+
+
+    @code {
+        bool fixed_header = true;
+        private string searchString = "";
+
+        bool validation;
+        bool vcomp;
+
+        //select title Create or Edit
+        bool select=false;
+
+        Shipper shipper = new Shipper();
+        private List<Shipper> shippers = new List<Shipper>();
+        private HashSet<Shipper> selectedItems = new HashSet<Shipper>();
+
+        private List<Company> companies = new List<Company>();
+
+        private HashSet<int> options { get; set; } = new HashSet<int>() { };
+
+        protected override void OnInitialized()
+        {
+            GetShippers();
+            GetCompanies();
+            vcomp = false;
+        }
+
+        private void EqualList()
+        {
+            foreach (var option in options)
+            {
+                var comp = companyService.GetCompanyById(option);
+                shipper.CompanyList.Append(comp.Name + ", ");
+                shipper.CompanyShipperList.Add(option);
+            }
+            if (shipper.CompanyList.Length != 0)
+                shipper.CompanyList.Remove(shipper.CompanyList.Length - 2, 2);
+        }
+
+        private void OnValidSubmit(EditContext context)
+        {
+            validation = true;
+            StateHasChanged();
+
+            if (shipper.Id == 0)
+            {
+                EqualList();
+                shipperService.SaveShipper(shipper);
+                snackBar.Add("Shipper Saved.", Severity.Success);
+            }
+            else
+            {
+                shipper.CompanyList.Clear();
+                shipper.CompanyShipperList.Clear();
+                EqualList();
+                shipperService.UpdateShipper(shipper);
+                snackBar.Add("Shipper Updated.", Severity.Normal);
+            }
+            vcomp = false;
+            options.Clear();
+        }
+
+        private void OpenShipperDialog()
+        {
+            shipper = new Shipper();
+            options.Clear();
+            vcomp = true;
+        }
+
+        void Cancel()
+        {
+            options.Clear();
+            vcomp = false;
+        }
+
+        private List<Company> GetCompanies()
+        {
+            companies = companyService.GetCompanies().ToList();
+            return companies;
+        }
+
+        private List<Shipper> GetShippers()
+        {
+            shippers = shipperService.GetShippers().ToList();
+            return shippers;
+        }
+
+        private bool SearchShipper(Shipper shipper)
+        {
+            if (string.IsNullOrWhiteSpace(searchString)) return true;
+            if (shipper.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+                || shipper.Phone.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+                 || shipper.Address.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+                )
+            {
+                return true;
+            }
+            return false;
+        }
+
+
+        private void Edit(int id)
+        {
+            select = true;
+            shipper = shippers.FirstOrDefault(s => s.Id == id);
+            foreach (var opt in shipper.CompanyShipperList)
+            {
+                options.Add(opt);
+            }
+            vcomp = true;
+        }
+        private void Delete(int id)
+        {
+            shipperService.DeleteShipper(id);
+            snackBar.Add("Shipper Deleted.", Severity.Error);
+        }
+
+        private void DeleteAll()
+        {
+            if (selectedItems.Count > 1)
+            {
+                shippers = selectedItems.ToList();
+               shipperService.DeleteAllShippers(shippers);
+                snackBar.Add("All Companies Deleted.", Severity.Error);
+            }
+            selectedItems = null;
+        }
+
+        //get shipper id
+        int ID;
+        Shipper entity;
+        private void getID()
+        {
+            entity = shipperService.GetShipperById(ID);
+        }
+
+    }
+

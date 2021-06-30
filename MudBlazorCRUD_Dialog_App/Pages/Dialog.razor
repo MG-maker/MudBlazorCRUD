@@ -1,0 +1,88 @@
+﻿@using MudBlazorCRUD_Dialog_App.Data.Models
+
+@inject MudBlazorCRUD_Dialog_App.Services.ICompanyService companyService
+
+<EditForm Model="@customer" OnValidSubmit="OnValidSubmit" OnInvalidSubmit="OnInvalidSubmit">
+    @*<DataAnnotationsValidator />*@
+    <ObjectGraphDataAnnotationsValidator />
+    <MudCard>
+        <MudCardContent>
+            <MudDialog>
+                <DialogContent>
+                    <MudTextField @bind-Value="customer.FirstName" Label="First Name" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.FirstName)"></MudTextField>
+                    <MudTextField @bind-Value="customer.LastName" Label="Last Name" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.LastName)"></MudTextField>
+                    <MudNumericField @bind-Value="customer.Information.Age" Label="Age" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.Information.Age)" Step="1"></MudNumericField>
+                    <MudTextField @bind-Value="customer.Information.PhoneNumber" Label="Phone Number" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.Information.PhoneNumber)"></MudTextField>
+                    <MudTextField @bind-Value="customer.Information.Email" Label="Email" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.Information.Email)"></MudTextField>
+                    <MudTextField @bind-Value="customer.Information.Social.Name" Label="Social Name" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.Information.Social.Name)"></MudTextField>
+                    <MudNumericField @bind-Value="customer.Work.Experience" Label="Experience" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.Work.Experience)" Step="1"></MudNumericField>
+                    <MudNumericField @bind-Value="customer.Work.Salary" Label="Salary" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => customer.Work.Salary)" />
+                       
+                    <MudSelect T="int?" Label="Select Company...." Strict="true" @bind-Value="@customer.CompanyId" For="@(() => customer.CompanyId)">
+                            <MudSelectItem T="int?">Select Company....</MudSelectItem>
+                            @foreach (Company comp in companies)
+                            {
+                                <MudSelectItem T="int?" Value="@comp.Id">@comp.Name</MudSelectItem>
+                            }
+
+                        </MudSelect>
+
+                </DialogContent>
+
+                <DialogActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Success">Save Customer</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="Cancel" Class="px-10">Close</MudButton>
+                </DialogActions>
+
+            </MudDialog>
+        </MudCardContent>
+    </MudCard>
+</EditForm>
+
+@*<label>@success</label>*@
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public Customer customer { get; set; } = new Customer();
+
+    private List<Company> companies = new List<Company>();
+
+    bool success;
+
+    protected override void OnInitialized()
+    {
+        if (customer.Id == 0)
+        {
+            customer.Information = new Information();
+            customer.Work = new Work();
+            customer.Information.Social = new Social();
+        }
+        GetCompanies();
+    }
+
+    private List<Company> GetCompanies()
+    {
+        companies = companyService.GetCompanies().ToList();
+        return companies;
+    }
+
+    private void OnValidSubmit(EditContext context)
+    {
+        success = true;
+        StateHasChanged();
+        MudDialog.Close(DialogResult.Ok(customer));
+    }
+
+    private void OnInvalidSubmit(EditContext context)
+    {
+        success = false;
+        StateHasChanged();
+    }
+
+    //void Cancel() => MudDialog.Cancel();
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}
